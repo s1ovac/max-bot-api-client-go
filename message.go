@@ -65,6 +65,11 @@ func (m *Message) AddMarkUp(user int64, from int, len int) *Message {
 	return m
 }
 
+func (m *Message) SetMarkups(markups []schemes.MarkUp) *Message {
+	m.message.Markups = markups
+	return m
+}
+
 func (m *Message) AddKeyboard(keyboard *Keyboard) *Message {
 	m.message.Attachments = append(m.message.Attachments, schemes.NewInlineKeyboardAttachmentRequest(keyboard.Build()))
 	return m
