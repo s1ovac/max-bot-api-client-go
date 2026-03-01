@@ -3,10 +3,11 @@ package maxbot
 import "github.com/max-messenger/max-bot-api-client-go/schemes"
 
 type Message struct {
-	userID  int64
-	chatID  int64
-	reset   bool
-	message *schemes.NewMessageBody
+	userID             int64
+	chatID             int64
+	reset              bool
+	disableLinkPreview bool
+	message            *schemes.NewMessageBody
 }
 
 func NewMessage() *Message {
@@ -44,6 +45,13 @@ func (m *Message) SetFormat(format string) *Message {
 }
 func (m *Message) SetNotify(notify bool) *Message {
 	m.message.Notify = notify
+
+	return m
+}
+
+// SetDisableLinkPreview disables link preview generation for this message.
+func (m *Message) SetDisableLinkPreview(disable bool) *Message {
+	m.disableLinkPreview = disable
 
 	return m
 }
