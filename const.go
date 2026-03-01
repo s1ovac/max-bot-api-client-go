@@ -49,6 +49,8 @@ const (
 	paramMessageIDs = "message_ids"
 	paramCallbackID = "callback_id"
 
+	paramDisableLinkPreview = "disable_link_preview"
+
 	paramTo      = "to"
 	paramCount   = "count"
 	paramFrom    = "from"

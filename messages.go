@@ -141,17 +141,17 @@ func (a *messages) NewKeyboardBuilder() *Keyboard {
 
 // Send sends a message to the chat. A new message identifier returns if no error.
 func (a *messages) Send(ctx context.Context, m *Message) error {
-	_, err := a.sendMessage(ctx, m.reset, m.chatID, m.userID, m.message)
+	_, err := a.sendMessage(ctx, m.reset, m.chatID, m.userID, m.disableLinkPreview, m.message)
 
 	return err
 }
 
 // SendWithResult sends a message to a chat and returns the created message along with any error.
 func (a *messages) SendWithResult(ctx context.Context, m *Message) (*schemes.Message, error) {
-	return a.sendMessage(ctx, m.reset, m.chatID, m.userID, m.message)
+	return a.sendMessage(ctx, m.reset, m.chatID, m.userID, m.disableLinkPreview, m.message)
 }
 
-func (a *messages) sendMessage(ctx context.Context, reset bool, chatID int64, userID int64, message *schemes.NewMessageBody) (*schemes.Message, error) {
+func (a *messages) sendMessage(ctx context.Context, reset bool, chatID int64, userID int64, disableLinkPreview bool, message *schemes.NewMessageBody) (*schemes.Message, error) {
 	wrapper := new(MessageResponse)
 	values := url.Values{}
 	if chatID != 0 {
@@ -159,6 +159,9 @@ func (a *messages) sendMessage(ctx context.Context, reset bool, chatID int64, us
 	}
 	if userID != 0 {
 		values.Set(paramUserID, strconv.Itoa(int(userID)))
+	}
+	if disableLinkPreview {
+		values.Set(paramDisableLinkPreview, "true")
 	}
 
 	body, err := a.client.request(ctx, http.MethodPost, pathMessages, values, reset, message)
