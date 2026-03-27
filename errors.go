@@ -23,12 +23,8 @@ func (e *APIError) Error() string {
 	return fmt.Sprintf("API error %d: %s", e.Code, e.Message)
 }
 
-func (e *APIError) Is(target error) bool {
-	if t, ok := target.(*APIError); ok {
-		return e.Code == t.Code
-	}
-
-	return false
+func (e *APIError) IsAttachmentNotReady() bool {
+	return e.Message == "attachment.not.ready"
 }
 
 type NetworkError struct {

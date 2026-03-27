@@ -32,17 +32,23 @@ func (m *Message) SetReset(reset bool) *Message {
 	return m
 }
 
+func (m *Message) SetPhoneNumbers(phoneNumbers []string) *Message {
+	m.message.PhoneNumbers = phoneNumbers
+	return m
+}
+
 func (m *Message) SetText(text string) *Message {
 	m.message.Text = text
 
 	return m
 }
 
-func (m *Message) SetFormat(format string) *Message {
+func (m *Message) SetFormat(format schemes.Format) *Message {
 	m.message.Format = format
 
 	return m
 }
+
 func (m *Message) SetNotify(notify bool) *Message {
 	m.message.Notify = notify
 
@@ -59,6 +65,12 @@ func (m *Message) SetDisableLinkPreview(disable bool) *Message {
 func (m *Message) SetReply(text, id string) *Message {
 	m.message.Text = text
 	m.message.Link = &schemes.NewMessageLink{Type: schemes.REPLY, Mid: id}
+
+	return m
+}
+
+func (m *Message) SetForward(mid string) *Message {
+	m.message.Link = &schemes.NewMessageLink{Type: schemes.FORWARD, Mid: mid}
 
 	return m
 }
@@ -98,6 +110,13 @@ func (m *Message) AddPhoto(photo *schemes.PhotoTokens) *Message {
 		Photos: photo.Photos,
 	}))
 
+	return m
+}
+
+func (m *Message) AddPhotoByToken(token string) *Message {
+	m.message.Attachments = append(m.message.Attachments, schemes.NewPhotoAttachmentRequest(schemes.PhotoAttachmentRequestPayload{
+		Token: token,
+	}))
 	return m
 }
 

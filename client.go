@@ -3,31 +3,31 @@ package maxbot
 import (
 	"bytes"
 	"context"
-	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"net/url"
 
+	jsoniter "github.com/json-iterator/go"
+
 	"github.com/max-messenger/max-bot-api-client-go/schemes"
 )
 
-//var (
-//	errLongPollTimeout = &TimeoutError{
-//		Op:     "long polling",
-//		Reason: "request timeout exceeded",
-//	}
-//)
+type HttpClient interface {
+	Do(req *http.Request) (*http.Response, error)
+}
 
 type client struct {
 	key        string
 	version    string
 	baseURL    *url.URL
-	httpClient *http.Client
+	httpClient HttpClient
+	errors     chan error
 }
 
-func newClient(key string, version string, baseURL *url.URL, httpClient *http.Client) *client {
+func newClient(key string, version string, baseURL *url.URL, httpClient HttpClient) *client {
 	if httpClient == nil {
 		httpClient = &http.Client{
 			Timeout: defaultTimeout,
@@ -39,6 +39,27 @@ func newClient(key string, version string, baseURL *url.URL, httpClient *http.Cl
 		version:    version,
 		baseURL:    baseURL,
 		httpClient: httpClient,
+		errors:     make(chan error, 1),
+	}
+}
+
+func (cl *client) notifyError(err error) {
+	if err == nil {
+		return
+	}
+	select {
+	case cl.errors <- err:
+	default:
+		log.Println(err)
+	}
+}
+
+func (cl *client) closer(name string, c io.Closer) {
+	if c == nil {
+		return
+	}
+	if err := c.Close(); err != nil {
+		cl.notifyError(fmt.Errorf("failed to close %s: %w", name, err))
 	}
 }
 
@@ -54,7 +75,7 @@ func (cl *client) request(ctx context.Context, method, path string, query url.Va
 		return cl.requestReader(ctx, method, path, query, reset, nil)
 	}
 
-	data, err := json.Marshal(body)
+	data, err := jsoniter.Marshal(body)
 	if err != nil {
 		return nil, &SerializationError{
 			Op:   "marshal",
@@ -90,13 +111,14 @@ func (cl *client) requestReader(ctx context.Context, method, path string, query 
 		req.Header.Set("Content-Type", "application/json")
 	}
 
-	resp, err := cl.httpClient.Do(req)
+	resp, err := cl.do(req)
 	if err != nil {
-		if urlErr, ok := err.(*url.Error); ok {
+		var urlErr *url.Error
+		if errors.As(err, &urlErr) {
 			if urlErr.Timeout() {
 				return nil, cl.createTimeoutError(
 					fmt.Sprintf("%s %s", method, path),
-					fmt.Sprintf("request timeout exceeded (%v)", cl.httpClient.Timeout),
+					"request timeout exceeded",
 				)
 			}
 		}
@@ -108,31 +130,23 @@ func (cl *client) requestReader(ctx context.Context, method, path string, query 
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		defer func() {
-			if closeErr := resp.Body.Close(); closeErr != nil {
-				log.Println(closeErr)
-			}
-		}()
+		defer cl.closer("requestReader body", resp.Body)
 
 		apiErr := &schemes.Error{}
-		if decodeErr := json.NewDecoder(resp.Body).Decode(apiErr); decodeErr != nil {
+		if decodeErr := jsoniter.NewDecoder(resp.Body).Decode(apiErr); decodeErr != nil {
 			return nil, fmt.Errorf("HTTP %d: %s", resp.StatusCode, http.StatusText(resp.StatusCode))
 		}
 
 		return nil, &APIError{
 			Code:    resp.StatusCode,
-			Message: apiErr.Error(),
+			Message: apiErr.Code,
+			Details: apiErr.Message,
 		}
 	}
 
 	return resp.Body, nil
 }
 
-// Close closes the HTTP client.
-func (cl *client) Close() error {
-	if transport, ok := cl.httpClient.Transport.(*http.Transport); ok {
-		transport.CloseIdleConnections()
-	}
-
-	return nil
+func (cl *client) do(req *http.Request) (*http.Response, error) {
+	return cl.httpClient.Do(req)
 }

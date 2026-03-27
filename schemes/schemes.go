@@ -131,6 +131,12 @@ type OpenAppButton struct {
 	ContactId int64  `json:"contact_id,omitempty"`
 }
 
+// MessageButton represents a button with text. When a user presses it the button's text sends
+// to the chat as a text message.
+type MessageButton struct {
+	Button
+}
+
 type Chat struct {
 	ChatId            int64           `json:"chat_id"`                // Chats identifier
 	Type              ChatType        `json:"type"`                   // Type of chat. One of: dialog, chat, channel
@@ -242,7 +248,7 @@ type ContactAttachmentRequestPayload struct {
 type Error struct {
 	ErrorText   string    `json:"error,omitempty"`                  // Error
 	Code        string    `json:"code,omitempty"`                   // Error code
-	Message     Message   `json:"message,omitempty"`                // Human-readable description
+	Message     string    `json:"message,omitempty"`                // Human-readable description
 	Results     []Results `json:"results,omitempty"`                // phones
 	NumberExist []string  `json:"existing_phone_numbers,omitempty"` // exists phones
 
@@ -398,6 +404,9 @@ const (
 	TypeMessageEdited    UpdateType = "message_edited"
 	TypeBotAdded         UpdateType = "bot_added"
 	TypeBotRemoved       UpdateType = "bot_removed"
+	TypeBotStoped        UpdateType = "bot_stopped"
+	TypeDialogRemoved    UpdateType = "dialog_removed"
+	TypeDialogCleared    UpdateType = "dialog_cleared"
 	TypeUserAdded        UpdateType = "user_added"
 	TypeUserRemoved      UpdateType = "user_removed"
 	TypeBotStarted       UpdateType = "bot_started"
@@ -443,11 +452,18 @@ type NewMessageBody struct {
 	Text         string          `json:"text,omitempty"`          // Message text
 	Attachments  []interface{}   `json:"attachments"`             // Message attachments. See `AttachmentRequest` and it's inheritors for full information
 	Link         *NewMessageLink `json:"link,omitempty"`          // Link to Message
-	Format       string          `json:"format,omitempty"`        // Format to Message
+	Format       Format          `json:"format,omitempty"`        // Format to Message
 	PhoneNumbers []string        `json:"phone_numbers,omitempty"` // PhoneNumber to Message
 	Notify       bool            `json:"notify,omitempty"`        // If false, chat participants wouldn't be notified
 	Markups      []MarkUp        `json:"markup,omitempty"`        // mention users
 }
+
+type Format string
+
+const (
+	HTML     Format = "html"
+	Markdown Format = "markdown"
+)
 
 // Markup represents a generic message formatting schema
 type Markup struct {
@@ -753,6 +769,51 @@ func (b BotRemovedFromChatUpdate) GetChatID() int64 {
 	return b.ChatId
 }
 
+// DialogRemovedFromChatUpdate is sent when the bot has been removed from a chat
+type DialogRemovedFromChatUpdate struct {
+	Update
+	ChatId int64 `json:"chat_id"` // Chat identifier bots removed from
+	User   User  `json:"user"`    // User who removed bots from chat
+}
+
+func (b DialogRemovedFromChatUpdate) GetUserID() int64 {
+	return b.User.UserId
+}
+
+func (b DialogRemovedFromChatUpdate) GetChatID() int64 {
+	return b.ChatId
+}
+
+// DialogClearedFromChatUpdate is sent when the bot has been removed from a chat
+type DialogClearedFromChatUpdate struct {
+	Update
+	ChatId int64 `json:"chat_id"` // Chat identifier bots removed from
+	User   User  `json:"user"`    // User who removed bots from chat
+}
+
+func (b DialogClearedFromChatUpdate) GetUserID() int64 {
+	return b.User.UserId
+}
+
+func (b DialogClearedFromChatUpdate) GetChatID() int64 {
+	return b.ChatId
+}
+
+// BotStopedFromChatUpdate is sent when the bot has been stoped from a chat
+type BotStopedFromChatUpdate struct {
+	Update
+	ChatId int64 `json:"chat_id"` // Chat identifier bots stoped from
+	User   User  `json:"user"`    // User who stoped bots from chat
+}
+
+func (b BotStopedFromChatUpdate) GetUserID() int64 {
+	return b.User.UserId
+}
+
+func (b BotStopedFromChatUpdate) GetChatID() int64 {
+	return b.ChatId
+}
+
 // BotStartedUpdate is triggered when a user starts a conversation with the bot by pressing the "Start" button.
 type BotStartedUpdate struct {
 	Update
@@ -814,7 +875,11 @@ func (b MessageCallbackUpdate) GetUserID() int64 {
 }
 
 func (b MessageCallbackUpdate) GetChatID() int64 {
-	return 0
+	if b.Message == nil {
+		return 0
+	}
+
+	return b.Message.Recipient.ChatId
 }
 
 // MessageCreatedUpdate represents an update that is received as soon as a message is created
@@ -877,14 +942,16 @@ func (b MessageEditedUpdate) GetChatID() int64 {
 type MessageRemovedUpdate struct {
 	Update
 	MessageId string `json:"message_id"` // Identifier of removed message
+	ChatID    int64  `json:"chat_id"`    // Chat identifier where event has occurred
+	UserID    int64  `json:"user_id"`    // User who removed message
 }
 
 func (b MessageRemovedUpdate) GetUserID() int64 {
-	return 0
+	return b.UserID
 }
 
 func (b MessageRemovedUpdate) GetChatID() int64 {
-	return 0
+	return b.ChatID
 }
 
 // UserAddedToChatUpdate represents an update that occurs when a user has been added to a chat
