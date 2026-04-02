@@ -32,6 +32,12 @@ func (m *Message) SetReset(reset bool) *Message {
 	return m
 }
 
+func (m *Message) SetDisableLinkPreview(disableLinkPreview bool) *Message {
+	m.disableLinkPreview = disableLinkPreview
+
+	return m
+}
+
 func (m *Message) SetPhoneNumbers(phoneNumbers []string) *Message {
 	m.message.PhoneNumbers = phoneNumbers
 	return m
@@ -51,13 +57,6 @@ func (m *Message) SetFormat(format schemes.Format) *Message {
 
 func (m *Message) SetNotify(notify bool) *Message {
 	m.message.Notify = notify
-
-	return m
-}
-
-// SetDisableLinkPreview disables link preview generation for this message.
-func (m *Message) SetDisableLinkPreview(disable bool) *Message {
-	m.disableLinkPreview = disable
 
 	return m
 }
