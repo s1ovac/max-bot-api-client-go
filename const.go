@@ -27,6 +27,7 @@ const (
 	pathUpload        = "uploads"
 	pathMessages      = "messages"
 	pathSubscriptions = "subscriptions"
+	pathVideos        = "videos/"
 
 	formatPathChatsID           = "chats/%d"
 	formatPathChatsActions      = "chats/%d/actions"
@@ -58,4 +59,3 @@ const (
 	paramLimit   = "limit"
 	paramTimeout = "timeout"
 )
-
