@@ -315,7 +315,10 @@ type InlineKeyboardAttachmentRequest struct {
 }
 
 func NewInlineKeyboardAttachmentRequest(payload Keyboard) *InlineKeyboardAttachmentRequest {
-	return &InlineKeyboardAttachmentRequest{Payload: payload, AttachmentRequest: AttachmentRequest{Type: AttachmentKeyboard}}
+	return &InlineKeyboardAttachmentRequest{
+		Payload:           payload,
+		AttachmentRequest: AttachmentRequest{Type: AttachmentKeyboard},
+	}
 }
 
 type ButtonType string
@@ -372,7 +375,11 @@ type LocationAttachmentRequest struct {
 }
 
 func NewLocationAttachmentRequest(latitude float64, longitude float64) *LocationAttachmentRequest {
-	return &LocationAttachmentRequest{Latitude: latitude, Longitude: longitude, AttachmentRequest: AttachmentRequest{Type: AttachmentLocation}}
+	return &LocationAttachmentRequest{
+		Latitude:          latitude,
+		Longitude:         longitude,
+		AttachmentRequest: AttachmentRequest{Type: AttachmentLocation},
+	}
 }
 
 type MediaAttachmentPayload struct {
@@ -716,6 +723,28 @@ type VideoAttachmentRequest struct {
 
 func NewVideoAttachmentRequest(payload UploadedInfo) *VideoAttachmentRequest {
 	return &VideoAttachmentRequest{Payload: payload, AttachmentRequest: AttachmentRequest{Type: AttachmentVideo}}
+}
+
+// VideoUrls contains playable URLs for a video in various resolutions.
+type VideoUrls struct {
+	Mp4_1080 string `json:"mp4_1080,omitempty"`
+	Mp4_720  string `json:"mp4_720,omitempty"`
+	Mp4_480  string `json:"mp4_480,omitempty"`
+	Mp4_360  string `json:"mp4_360,omitempty"`
+	Mp4_240  string `json:"mp4_240,omitempty"`
+	Mp4_144  string `json:"mp4_144,omitempty"`
+	Hls      string `json:"hls,omitempty"`
+}
+
+// VideoAttachmentDetails contains detailed information about a video attachment
+// returned by the GET /videos/{videoToken} endpoint.
+type VideoAttachmentDetails struct {
+	Token     string                  `json:"token"`
+	Urls      *VideoUrls              `json:"urls"`
+	Thumbnail *PhotoAttachmentPayload `json:"thumbnail"`
+	Width     int                     `json:"width"`
+	Height    int                     `json:"height"`
+	Duration  int                     `json:"duration"`
 }
 
 // Update represents different types of events that occurred in the chat.

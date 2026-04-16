@@ -31,7 +31,14 @@ type MessageResponse struct {
 // GetMessages returns messages in chat: result page and marker referencing to the next page.
 // Messages traversed in reverse direction so the latest message in chat will be first in result array.
 // Therefore, if you use from and to parameters, to must be less than from
-func (a *messages) GetMessages(ctx context.Context, chatID int64, messageIDs []string, from int, to int, count int) (*schemes.MessageList, error) {
+func (a *messages) GetMessages(
+	ctx context.Context,
+	chatID int64,
+	messageIDs []string,
+	from int,
+	to int,
+	count int,
+) (*schemes.MessageList, error) {
 	result := new(schemes.MessageList)
 	values := url.Values{}
 	if chatID != 0 {
@@ -90,7 +97,14 @@ func (a *messages) EditMessage(ctx context.Context, messageID string, m *Message
 
 		retryWait := time.Duration(1<<uint(attempt)) * time.Second
 		if attempt < maxRetries-1 {
-			a.client.notifyError(fmt.Errorf("edit message attempt %d failed, retrying in %v: %v", attempt+1, retryWait, err))
+			a.client.notifyError(
+				fmt.Errorf(
+					"edit message attempt %d failed, retrying in %v: %v",
+					attempt+1,
+					retryWait,
+					err,
+				),
+			)
 			select {
 			case <-ctx.Done():
 				return ctx.Err()
@@ -118,7 +132,11 @@ func (a *messages) DeleteMessage(ctx context.Context, messageID string) (*scheme
 
 // AnswerOnCallback should be called to send an answer after a user has clicked the button.
 // The answer may be an updated message or/and a one-time user notification.
-func (a *messages) AnswerOnCallback(ctx context.Context, callbackID string, callback *schemes.CallbackAnswer) (*schemes.SimpleQueryResult, error) {
+func (a *messages) AnswerOnCallback(
+	ctx context.Context,
+	callbackID string,
+	callback *schemes.CallbackAnswer,
+) (*schemes.SimpleQueryResult, error) {
 	result := new(schemes.SimpleQueryResult)
 	values := url.Values{}
 	values.Set(paramCallbackID, callbackID)
@@ -154,7 +172,10 @@ func (a *messages) Send(ctx context.Context, m *Message) error {
 
 		retryWait := time.Duration(1<<uint(attempt)) * time.Second
 		if attempt < maxRetries-1 {
-			a.client.notifyError(fmt.Errorf("send message attempt %d failed, retrying in %v: %v", attempt+1, retryWait, err))
+			a.client.notifyError(fmt.Errorf("send message attempt %d failed, retrying in %v: %v",
+				attempt+1,
+				retryWait,
+				err))
 			select {
 			case <-ctx.Done():
 				return ctx.Err()
@@ -183,7 +204,14 @@ func (a *messages) SendWithResult(ctx context.Context, m *Message) (*schemes.Mes
 
 		retryWait := time.Duration(1<<uint(attempt)) * time.Second
 		if attempt < maxRetries-1 {
-			a.client.notifyError(fmt.Errorf("send message attempt %d failed, retrying in %v: %v", attempt+1, retryWait, err))
+			a.client.notifyError(
+				fmt.Errorf(
+					"send message attempt %d failed, retrying in %v: %v",
+					attempt+1,
+					retryWait,
+					err,
+				),
+			)
 			select {
 			case <-ctx.Done():
 				return nil, ctx.Err()
@@ -195,7 +223,14 @@ func (a *messages) SendWithResult(ctx context.Context, m *Message) (*schemes.Mes
 	return nil, err
 }
 
-func (a *messages) sendMessage(ctx context.Context, reset bool, disableLinkPreview bool, chatID int64, userID int64, message *schemes.NewMessageBody) (*schemes.Message, error) {
+func (a *messages) sendMessage(
+	ctx context.Context,
+	reset bool,
+	disableLinkPreview bool,
+	chatID int64,
+	userID int64,
+	message *schemes.NewMessageBody,
+) (*schemes.Message, error) {
 	wrapper := new(MessageResponse)
 	values := url.Values{}
 	if chatID != 0 {
@@ -282,7 +317,11 @@ func (a *messages) ListExist(ctx context.Context, m *Message) ([]string, error) 
 	return a.checkNumberExist(ctx, m.reset, m.message)
 }
 
-func (a *messages) checkNumberExist(ctx context.Context, reset bool, message *schemes.NewMessageBody) ([]string, error) {
+func (a *messages) checkNumberExist(
+	ctx context.Context,
+	reset bool,
+	message *schemes.NewMessageBody,
+) ([]string, error) {
 	result := new(schemes.Error)
 	values := url.Values{}
 	if reset {
@@ -307,4 +346,21 @@ func (a *messages) checkNumberExist(ctx context.Context, reset bool, message *sc
 	}
 
 	return nil, nil
+}
+
+// GetVideoAttachmentDetails returns video attachment details by token, including a playable URL.
+func (a *messages) GetVideoAttachmentDetails(
+	ctx context.Context,
+	videoToken string,
+) (*schemes.VideoAttachmentDetails, error) {
+	result := new(schemes.VideoAttachmentDetails)
+	path := pathVideos + url.PathEscape(videoToken)
+
+	body, err := a.client.request(ctx, http.MethodGet, path, nil, false, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer a.client.closer("getVideoAttachmentDetails body", body)
+
+	return result, jsoniter.NewDecoder(body).Decode(result)
 }
