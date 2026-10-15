@@ -38,6 +38,11 @@ func Test_uploads_UploadMediaFromReaderWithName_whenUploadVideoOrAudioType(t *te
 			uploadType: schemes.FILE,
 			want:       &schemes.UploadedInfo{FileID: 12345, Token: "new_file_token"},
 		},
+		{
+			name:       "image type",
+			uploadType: schemes.PHOTO,
+			want:       &schemes.UploadedInfo{Token: "photo_token_from_photos"},
+		},
 	}
 
 	var server *httptest.Server
@@ -50,6 +55,8 @@ func Test_uploads_UploadMediaFromReaderWithName_whenUploadVideoOrAudioType(t *te
 				_, _ = fmt.Fprint(w, `{"token": "new_audio_token", "url": "`+server.URL+`/mock-upload-video-or-audio"}`)
 			case string(schemes.FILE):
 				_, _ = fmt.Fprint(w, `{"url": "`+server.URL+`/mock-upload-file"}`)
+			case string(schemes.PHOTO):
+				_, _ = fmt.Fprint(w, `{"url": "`+server.URL+`/mock-upload-photo"}`)
 			}
 		}
 		if r.URL.Path == "/mock-upload-video-or-audio" {
@@ -58,11 +65,14 @@ func Test_uploads_UploadMediaFromReaderWithName_whenUploadVideoOrAudioType(t *te
 		if r.URL.Path == "/mock-upload-file" {
 			_, _ = fmt.Fprint(w, `{"file_id": 12345, "token": "new_file_token"}`)
 		}
+		if r.URL.Path == "/mock-upload-photo" {
+			_, _ = fmt.Fprint(w, `{"photos":{"8t/PabcNTw==":{"token":"photo_token_from_photos"}}}`)
+		}
 	}))
 	defer server.Close()
 
 	u, _ := url.Parse(server.URL)
-	cl := newClient("bot_token", Version, u, server.Client())
+	cl := newClient("bot_token", u, server.Client())
 	upl := newUploads(cl)
 
 	for _, tt := range tests {
@@ -117,7 +127,7 @@ func Test_uploads_UploadMediaFromFile(t *testing.T) {
 	defer server.Close()
 
 	u, _ := url.Parse(server.URL)
-	cl := newClient("bot_token", Version, u, server.Client())
+	cl := newClient("bot_token", u, server.Client())
 	upl := newUploads(cl)
 
 	result, err := upl.UploadMediaFromFile(context.Background(), schemes.FILE, fileName)
@@ -153,7 +163,7 @@ func Test_uploads_UploadPhotoFromFile(t *testing.T) {
 	defer server.Close()
 
 	u, _ := url.Parse(server.URL)
-	cl := newClient("bot_token", Version, u, server.Client())
+	cl := newClient("bot_token", u, server.Client())
 	upl := newUploads(cl)
 
 	result, err := upl.UploadPhotoFromFile(context.Background(), fileName)
@@ -208,7 +218,7 @@ func Test_uploads_UploadMediaFromFile_matchesBufferedMultipartHeaders(t *testing
 	defer server.Close()
 
 	u, _ := url.Parse(server.URL)
-	cl := newClient("bot_token", Version, u, server.Client())
+	cl := newClient("bot_token", u, server.Client())
 	upl := newUploads(cl)
 
 	_, err := upl.UploadMediaFromReaderWithName(context.Background(), schemes.FILE, strings.NewReader(fileContent), fileName)

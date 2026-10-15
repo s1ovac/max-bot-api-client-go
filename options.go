@@ -36,10 +36,9 @@ func WithPauseTimeout(timeout time.Duration) Option {
 	}
 }
 
-func WithVersion(version string) Option {
-	return func(api *Api) {
-		api.client.version = version
-	}
+// Deprecated: not allowed
+func WithVersion(_ string) Option {
+	return func(api *Api) {}
 }
 
 func WithDebugMode() Option {
@@ -57,5 +56,17 @@ func WithDebugChat(chat int64) Option {
 func WithUpdateHandler(f UpdateHandler) Option {
 	return func(api *Api) {
 		api.updateHandler = f
+	}
+}
+
+// WithErrorBufferSize задаёт ёмкость канала ошибок, возвращаемого GetErrors().
+// Больший буфер снижает риск потери ошибок при всплесках (повторные сбои long
+// polling и т.п.). Значения меньше 1 игнорируются.
+func WithErrorBufferSize(size int) Option {
+	return func(api *Api) {
+		if size < 1 {
+			return
+		}
+		api.client.errors = make(chan error, size)
 	}
 }

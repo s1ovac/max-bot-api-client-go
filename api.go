@@ -43,12 +43,12 @@ func New(token string, opts ...Option) (*Api, error) {
 		return nil, ErrEmptyToken
 	}
 
-	u, err := url.Parse(defaultAPIURL)
+	u, err := url.Parse(DefaultAPIURL)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrInvalidURL, err)
 	}
 
-	cl := newClient(token, Version, u, &http.Client{Timeout: defaultTimeout})
+	cl := newClient(token, u, &http.Client{Timeout: defaultTimeout})
 	api := &Api{
 		Bots:          newBots(cl),
 		Chats:         newChats(cl),

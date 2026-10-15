@@ -3,14 +3,23 @@ package maxbot
 import "time"
 
 const (
+	// Deprecated: not allowed
 	Version = "1.2.5"
 
 	SecretHeader = "X-Max-Bot-Api-Secret"
 
+	DefaultAPIURL = "https://platform-api2.max.ru/"
+
+	// Deprecated
 	defaultAPIURL   = "https://platform-api.max.ru/"
 	defaultTimeout  = 30 * time.Second
 	defaultPause    = 1 * time.Second
 	maxUpdatesLimit = 50
+
+	// defaultErrorBufferSize — ёмкость канала ошибок по умолчанию. Буфер в 1
+	// элемент терял ошибки при всплесках (например, при повторных сбоях long
+	// polling): лишние ошибки уходили только в log, минуя GetErrors().
+	defaultErrorBufferSize = 16
 
 	maxRetries = 3
 )
@@ -38,7 +47,6 @@ const (
 )
 
 const (
-	paramVersion      = "v"
 	paramURL          = "url"
 	paramType         = "type"
 	paramTypes        = "types"
@@ -59,4 +67,3 @@ const (
 	paramLimit   = "limit"
 	paramTimeout = "timeout"
 )
-
